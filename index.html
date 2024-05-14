@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRP</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="https://cdn.xjk.yt/glob/favicon.ico" type="image/x-icon">
+
+    <meta property="og:title" content="Custom Replace Profiles" />
+    <meta property="og:description" content="This is a web companion tool to the replace profiles tool (Auto Alteration) made by Tobias2g" />
+    <meta property="og:url" content="https://www.crp.xjk.yt" />
+    <meta property="og:image" content="https://www.crp.xjk.yt/content/img/og-img-preview.png" />
+</head>
+
+<body>
+    <canvas id="dotCanvas"></canvas>
+
+    <div class="modal">
+        <h1>Custom Replace Profiles</h1>
+
+        <div class="flex-container settings-area">
+            <button id="placeholderId" onclick="placeholderFunction()">PLACEHOLDER</button>
+            <button id="placeholderId" onclick="placeholderFunction()">PLACEHOLDER</button>
+            <button id="placeholderId" onclick="placeholderFunction()">PLACEHOLDER</button>
+            <button id="placeholderId" onclick="placeholderFunction()">PLACEHOLDER</button>
+        </div>
+
+        <div style="padding-bottom: 6px;">
+            <input type="text" id="fileName" placeholder="Enter the name of the file">
+        </div>
+
+        <div class="flex-container input-area">
+            <input type="text" id="blockInput" placeholder="Enter input block name">
+            <input type="text" id="blockOutput" placeholder="Enter output block name">
+
+            <div class="btn-group" style="padding-right: 8px;">
+                <input type="radio" id="blockModeReplace" name="replace" value="Replace">
+                <label for="blockModeReplace" class="btn">Replace</label>
+
+                <input type="radio" id="blockModeDelete" name="delete" value="Delete">
+                <label for="blockModeDelete" class="btn">Delete</label>
+            </div>
+
+            <button onclick="showNotification('Added to file!');">🎨</button>
+        </div>
+
+        <div class="flex-container output-area">
+            <div id="outputString" class="text-field" style="margin-right: 10px;">Your file will appear here...</div>
+            <button onclick="copyFileToClipboard();" style="margin-right: 8px;">📋</button>
+            <button onclick="downloadFile();">💾</button>
+        </div>
+
+        <div class="flex-container preview-area">
+            <div id="previewString" class="text-field">Preview color text here </div>
+        </div>
+    </div>
+    
+    
+    <div id="notificationContainer" class="notification-container"></div>
+
+    <script src="script.js"></script>
+    <script src="https://cdn.xjk.yt/glob/background-dots.js"></script>
+
+    <script>
+        function clearFormatter() {
+            if (confirm("Are you sure you want to clear the Replace Profile?")) {
+                // Set the arrays to 0
+            }
+
+        }
+    </script>
+    <script>
+        function copyFileToClipboard() {
+            const outputString = document.getElementById("outputString").innerText;
+            navigator.clipboard.writeText(outputString)
+                .then(() => {
+                    showNotification("Copied to clipboard!");
+                })
+                .catch(err => {
+                    console.error('Error in copying text: ', err);
+                });
+        }
+    </script>
+    <script>
+        function downloadFile() {
+            const outputString = document.getElementById("outputString").innerText;
+            const blob = new Blob([outputString], {
+                type: 'text/plain'
+            });
+            const url = URL.createObjectURL(blob);
+
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'replace-profile.txt';
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+        }
+    </script>
+    <script>
+        function showNotification(message) {
+            const notification = document.createElement('div');
+            notification.classList.add('notification-message');
+            notification.textContent = message;
+        
+            const container = document.getElementById('notificationContainer');
+            container.appendChild(notification);
+        
+            setTimeout(() => {
+                notification.classList.add('show');
+            }, 100);
+        
+            setTimeout(() => {
+                notification.classList.remove('show');
+                setTimeout(() => {
+                    container.removeChild(notification);
+                }, 500);
+            }, 3000);
+        }
+    </script>
+</body>
+
+</html>
