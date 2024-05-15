@@ -48,7 +48,7 @@
         
 
         <div class="flex-container output-area">
-            <div id="outputString" class="text-field" style="margin-right: 10px;">Your file will appear here...</div>
+            <div id="filePreview" class="text-field" style="margin-right: 10px;">Your file will appear here...</div>
             <button onclick="copyToClipboard();" style="margin-right: 8px;">📋</button>
             <button onclick="downloadFile();">💾</button>
         </div>
@@ -72,6 +72,8 @@
     </script>
     <script>
         function copyToClipboard() {
+            updatePreview();
+
             const className = document.getElementById('className').value.trim() || 'CustomReplaceProfiles';
             if (className === '') {
                 showNotification('Please enter a class-/file- name');
@@ -82,7 +84,7 @@
 
             navigator.clipboard.writeText(fileContent).then(function() {
                 console.log('Copying to clipboard was successful!');
-                alert('Successfully copied to clipboard!');
+                showNotification('Successfully copied to clipboard!');
             }, function(err) {
                 console.error('Could not copy text: ', err);
             });
@@ -90,6 +92,8 @@
     </script>
     <script>
         function downloadFile() {
+            updatePreview();
+
             const className = document.getElementById('className').value.trim() || 'CustomReplaceProfiles';
             if (className === '') {
                 showNotification('Please enter a class-/file- name');

@@ -113,6 +113,12 @@ function updatePreviewArea() {
     });
 }
 
+function updatePreview() {
+    const fileContent = generateFileContent();
+    const filePreview = document.getElementById('filePreview');
+    filePreview.textContent = fileContent;
+}
+
 function generateFileContent(className, functionName) {
     let fileContent = `using GBX.NET;\nusing GBX.NET.Engines.Game;\nclass CustomReplaceProfiles{\n    static float PI = (float)Math.PI;\n    public static void ${functionName}(Map map){\n`;
 
