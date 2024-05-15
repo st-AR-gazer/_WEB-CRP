@@ -45,6 +45,7 @@ function updatePreviewArea() {
         inputBlock.value = block.originBlock;
         inputBlock.onchange = (e) => {
             block.originBlock = e.target.value.trim();
+            updatePreview();
         };
 
         const outputBlock = document.createElement('input');
@@ -52,53 +53,14 @@ function updatePreviewArea() {
         outputBlock.value = block.replaceBlock;
         outputBlock.onchange = (e) => {
             block.replaceBlock = e.target.value.trim();
+            updatePreview();
         };
-        if (block.action === 'delete') {
-            outputBlock.style.display = 'none';
-        }
+        outputBlock.style.display = block.action === 'delete' ? 'none' : '';
 
         const btnGroup = document.createElement('div');
         btnGroup.className = 'btn-group';
-
-        // Create Replace radio button and label
-        const replaceRadio = document.createElement('input');
-        replaceRadio.type = 'radio';
-        replaceRadio.id = `replace${index}`;
-        replaceRadio.name = `action${index}`;
-        replaceRadio.value = 'replace';
-        replaceRadio.checked = block.action === 'replace';
-        replaceRadio.onchange = () => {
-            block.action = 'replace';
-            outputBlock.style.display = 'inline';
-        };
-        const replaceLabel = document.createElement('label');
-        replaceLabel.htmlFor = `replace${index}`;
-        replaceLabel.className = 'btn';
-        replaceLabel.textContent = 'Replace';
-
-        // Create Delete radio button and label
-        const deleteRadio = document.createElement('input');
-        deleteRadio.type = 'radio';
-        deleteRadio.id = `delete${index}`;
-        deleteRadio.name = `action${index}`;
-        deleteRadio.value = 'delete';
-        deleteRadio.checked = block.action === 'delete';
-        deleteRadio.onchange = () => {
-            block.action = 'delete';
-            outputBlock.style.display = 'none';
-        };
-        const deleteLabel = document.createElement('label');
-        deleteLabel.htmlFor = `delete${index}`;
-        deleteLabel.className = 'btn';
-        deleteLabel.textContent = 'Delete';
-
-        container.appendChild(inputBlock);
-        container.appendChild(outputBlock);
-        btnGroup.appendChild(replaceRadio);
-        btnGroup.appendChild(replaceLabel);
-        btnGroup.appendChild(deleteRadio);
-        btnGroup.appendChild(deleteLabel);
-        container.appendChild(btnGroup);
+        btnGroup.appendChild(createRadioButton(`replace${index}`, `action${index}`, 'replace', block.action === 'replace', 'Replace', outputBlock));
+        btnGroup.appendChild(createRadioButton(`delete${index}`, `action${index}`, 'delete', block.action === 'delete', 'Delete', outputBlock));
 
         const deleteButton = document.createElement('button');
         deleteButton.textContent = 'Delete Item';
@@ -107,6 +69,10 @@ function updatePreviewArea() {
             blocks.splice(index, 1);
             updatePreviewArea();
         };
+
+        container.appendChild(inputBlock);
+        container.appendChild(outputBlock);
+        container.appendChild(btnGroup);
         container.appendChild(deleteButton);
 
         previewArea.appendChild(container);
@@ -164,4 +130,28 @@ class DiagBlockChange : BlockChange{
     }
 }`;
     return fileContent;
+}
+
+function createRadioButton(id, name, value, isChecked, labelContent, outputBlock) {
+    const radioInput = document.createElement('input');
+    radioInput.type = 'radio';
+    radioInput.id = id;
+    radioInput.name = name;
+    radioInput.value = value;
+    radioInput.checked = isChecked;
+    radioInput.onchange = () => {
+        blocks.find(b => `action${blocks.indexOf(b)}` === name).action = value;
+        outputBlock.style.display = value === 'delete' ? 'none' : '';
+        updatePreviewArea();
+    };
+
+    const label = document.createElement('label');
+    label.htmlFor = id;
+    label.className = 'btn';
+    label.textContent = labelContent;
+
+    const container = document.createElement('div');
+    container.appendChild(radioInput);
+    container.appendChild(label);
+    return container;
 }
