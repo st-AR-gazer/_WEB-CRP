@@ -28,35 +28,32 @@
         </div> -->
 
         <div style="padding-bottom: 6px;">
-            <input type="text" id="fileName" placeholder="Enter the name of the file">
+            <input type="text" id="className" placeholder="Enter class-/file- name">
+            <!--<span id="classNameFeedback" style="color: red;"></span>-->
         </div>
 
         <div class="flex-container input-area">
-            <input type="text" id="blockInput" placeholder="Enter input block name">
-            <input type="text" id="blockOutput" placeholder="Enter output block name">
-
-            <div class="btn-group" style="padding-right: 8px;">
-                <input type="radio" id="blockModeReplace" name="replace" value="Replace">
+            <input type="text" id="blockInput" placeholder="Enter input block name" class="full-width-input">
+            <div id="outputBlockContainer">
+                <input type="text" id="blockOutput" placeholder="Enter output block name">
+            </div>
+            <div class="btn-group">
+                <input type="radio" id="blockModeReplace" name="action" value="replace" checked>
                 <label for="blockModeReplace" class="btn">Replace</label>
-
-                <input type="radio" id="blockModeDelete" name="delete" value="Delete">
+                <input type="radio" id="blockModeDelete" name="action" value="delete">
                 <label for="blockModeDelete" class="btn">Delete</label>
             </div>
-
-            <button onclick="showNotification('Added to file!');">🎨</button>
+            <button onclick="addBlock();" style="margin-left: 10px;">Add Block</button>
         </div>
+        
 
         <div class="flex-container output-area">
             <div id="outputString" class="text-field" style="margin-right: 10px;">Your file will appear here...</div>
-            <button onclick="copyFileToClipboard();" style="margin-right: 8px;">📋</button>
+            <button onclick="copyToClipboard();" style="margin-right: 8px;">📋</button>
             <button onclick="downloadFile();">💾</button>
         </div>
 
-        <div class="flex-container preview-area">
-            <div>
-                
-            </div>
-        </div>
+        <div class="preview-area"></div>
     </div>
     
     
@@ -68,37 +65,48 @@
     <script>
         function clearFormatter() {
             if (confirm("Are you sure you want to clear the Replace Profile?")) {
-                // Set the arrays to 0
+                
             }
 
         }
     </script>
     <script>
-        function copyFileToClipboard() {
-            const outputString = document.getElementById("outputString").innerText;
-            navigator.clipboard.writeText(outputString)
-                .then(() => {
-                    showNotification("Copied to clipboard!");
-                })
-                .catch(err => {
-                    console.error('Error in copying text: ', err);
-                });
+        function copyToClipboard() {
+            const className = document.getElementById('className').value.trim() || 'CustomReplaceProfiles';
+            if (className === '') {
+                showNotification('Please enter a class-/file- name');
+                return;
+            }
+            const functionName = className.replace(/\s+/g, '_');
+            let fileContent = generateFileContent(className, functionName);
+
+            navigator.clipboard.writeText(fileContent).then(function() {
+                console.log('Copying to clipboard was successful!');
+                alert('Successfully copied to clipboard!');
+            }, function(err) {
+                console.error('Could not copy text: ', err);
+            });
         }
     </script>
     <script>
         function downloadFile() {
-            const outputString = document.getElementById("outputString").innerText;
-            const blob = new Blob([outputString], {
-                type: 'text/plain'
-            });
-            const url = URL.createObjectURL(blob);
+            const className = document.getElementById('className').value.trim() || 'CustomReplaceProfiles';
+            if (className === '') {
+                showNotification('Please enter a class-/file- name');
+                return;
+            }
+            const functionName = className.replace(/\s+/g, '_');
+            let fileContent = generateFileContent(className, functionName);
 
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'replace-profile.txt';
-            document.body.appendChild(a);
-            a.click();
-            window.URL.revokeObjectURL(url);
+            const blob = new Blob([fileContent], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const downloadLink = document.createElement('a');
+            downloadLink.href = url;
+            downloadLink.download = `${className}.cs`;
+            document.body.appendChild(downloadLink);
+            downloadLink.click();
+            document.body.removeChild(downloadLink);
+            URL.revokeObjectURL(url);
         }
     </script>
     <script>

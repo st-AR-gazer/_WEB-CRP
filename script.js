@@ -1,66 +1,161 @@
-const blocks = [];
+document.addEventListener('DOMContentLoaded', function() {
+    const replaceRadio = document.getElementById('blockModeReplace');
+    const deleteRadio = document.getElementById('blockModeDelete');
+    const outputBlockContainer = document.getElementById('outputBlockContainer');
 
-function addBlock() {
-    const originBlock = document.getElementById('originBlock').value.trim();
-    const replaceBlock = document.getElementById('replaceBlock').value.trim();
-    const action = document.getElementById('action').value;
-    if (originBlock && (action === 'replace' && replaceBlock || action === 'delete')) {
-        blocks.push({ originBlock, replaceBlock, action });
-        document.getElementById('originBlock').value = '';
-        document.getElementById('replaceBlock').value = '';
-        updateBlocksList();
-    }
-}
-
-function updateBlocksList() {
-    const list = document.getElementById('blocksList');
-    list.innerHTML = '';
-    blocks.forEach((block, index) => {
-        const item = document.createElement('li');
-        item.textContent = `${block.originBlock} | ${block.replaceBlock || 'N/A'} | ${block.action}`;
-        const deleteBtn = document.createElement('button');
-        deleteBtn.textContent = 'Delete';
-        deleteBtn.onclick = function() { deleteBlock(index); };
-        item.appendChild(deleteBtn);
-        list.appendChild(item);
-    });
-}
-
-function deleteBlock(index) {
-    blocks.splice(index, 1);
-    updateBlocksList();
-}
-
-function generateAndDownloadCode() {
-    const className = document.getElementById('className').value.trim();
-    if (!className) {
-        alert('Please enter a valid class name.');
-        return;
-    }
-    let code = `using GBX.NET;\nusing GBX.NET.Engines.Game;\n\nclass ${className}{\n    static float PI = (float)Math.PI;\n    public static void CPBoost(Map map){\n`;
-
-    blocks.forEach(block => {
-        if (block.action === 'replace') {
-            code += `        map.replace("${block.originBlock}", new BlockChange(BlockType.Block,"${block.replaceBlock}"));\n`;
-        } else if (block.action === 'delete') {
-            code += `        map.delete("${block.originBlock}");\n`;
+    replaceRadio.addEventListener('change', function() {
+        if (this.checked) {
+            outputBlockContainer.style.display = 'inline';
         }
     });
 
-    code += '    }\n}\n\nclass DiagBlockChange : BlockChange{\n    public DiagBlockChange(BlockType blockType, string model) : base(blockType, model) {}\n    public DiagBlockChange(BlockType blockType, string model, Vec3 absolutePosition) : base(blockType, model, absolutePosition) {}\n    public DiagBlockChange(BlockType blockType, string model, Vec3 absolutePosition, Vec3 pitchYawRoll) : base(blockType, model, absolutePosition, pitchYawRoll) {}\n    public DiagBlockChange(Vec3 absolutePosition) : base(absolutePosition) {}\n    public DiagBlockChange(Vec3 absolutePosition, Vec3 pitchYawRoll) : base(absolutePosition, pitchYawRoll) {}\n\n    public override void changeBlock(CGameCtnBlock ctnBlock, Block @block) {\n        // Insert logic here based on direction\n    }\n}';
-    
-    const uuid = crypto.randomUUID();
-    const blob = new Blob([code], { type: 'text/plain' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${className}_${uuid}.cs`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    window.URL.revokeObjectURL(url);
+    deleteRadio.addEventListener('change', function() {
+        if (this.checked) {
+            outputBlockContainer.style.display = 'none';
+        }
+    });
+});
+
+const blocks = [];
+
+function addBlock() {
+    const originBlock = document.getElementById('blockInput').value.trim();
+    const replaceBlock = document.getElementById('blockOutput').value.trim();
+    const action = document.querySelector('input[name="action"]:checked').value;
+
+    if (originBlock && (action === 'replace' && replaceBlock || action === 'delete')) {
+        const block = { originBlock, replaceBlock, action };
+        blocks.push(block);
+        document.getElementById('blockInput').value = '';
+        document.getElementById('blockOutput').value = '';
+        updatePreviewArea();
+    }
 }
 
-document.getElementById('form').addEventListener('submit', function(event) {
-    event.preventDefault();
-});
+function updatePreviewArea() {
+    const previewArea = document.querySelector('.preview-area');
+    previewArea.innerHTML = '';
+
+    blocks.forEach((block, index) => {
+        const container = document.createElement('div');
+        container.className = 'flex-container';
+
+        const inputBlock = document.createElement('input');
+        inputBlock.type = 'text';
+        inputBlock.value = block.originBlock;
+        inputBlock.onchange = (e) => {
+            block.originBlock = e.target.value.trim();
+        };
+
+        const outputBlock = document.createElement('input');
+        outputBlock.type = 'text';
+        outputBlock.value = block.replaceBlock;
+        outputBlock.onchange = (e) => {
+            block.replaceBlock = e.target.value.trim();
+        };
+        if (block.action === 'delete') {
+            outputBlock.style.display = 'none';
+        }
+
+        const btnGroup = document.createElement('div');
+        btnGroup.className = 'btn-group';
+
+        // Create Replace radio button and label
+        const replaceRadio = document.createElement('input');
+        replaceRadio.type = 'radio';
+        replaceRadio.id = `replace${index}`;
+        replaceRadio.name = `action${index}`;
+        replaceRadio.value = 'replace';
+        replaceRadio.checked = block.action === 'replace';
+        replaceRadio.onchange = () => {
+            block.action = 'replace';
+            outputBlock.style.display = 'inline';
+        };
+        const replaceLabel = document.createElement('label');
+        replaceLabel.htmlFor = `replace${index}`;
+        replaceLabel.className = 'btn';
+        replaceLabel.textContent = 'Replace';
+
+        // Create Delete radio button and label
+        const deleteRadio = document.createElement('input');
+        deleteRadio.type = 'radio';
+        deleteRadio.id = `delete${index}`;
+        deleteRadio.name = `action${index}`;
+        deleteRadio.value = 'delete';
+        deleteRadio.checked = block.action === 'delete';
+        deleteRadio.onchange = () => {
+            block.action = 'delete';
+            outputBlock.style.display = 'none';
+        };
+        const deleteLabel = document.createElement('label');
+        deleteLabel.htmlFor = `delete${index}`;
+        deleteLabel.className = 'btn';
+        deleteLabel.textContent = 'Delete';
+
+        container.appendChild(inputBlock);
+        container.appendChild(outputBlock);
+        btnGroup.appendChild(replaceRadio);
+        btnGroup.appendChild(replaceLabel);
+        btnGroup.appendChild(deleteRadio);
+        btnGroup.appendChild(deleteLabel);
+        container.appendChild(btnGroup);
+
+        const deleteButton = document.createElement('button');
+        deleteButton.textContent = 'Delete Item';
+        deleteButton.style.marginLeft = '10px';
+        deleteButton.onclick = () => {
+            blocks.splice(index, 1);
+            updatePreviewArea();
+        };
+        container.appendChild(deleteButton);
+
+        previewArea.appendChild(container);
+    });
+}
+
+function generateFileContent(className, functionName) {
+    let fileContent = `using GBX.NET;\nusing GBX.NET.Engines.Game;\nclass CustomReplaceProfiles{\n    static float PI = (float)Math.PI;\n    public static void ${functionName}(Map map){\n`;
+
+    blocks.forEach(block => {
+        if (block.action === 'replace') {
+            fileContent += `        map.replace("${block.originBlock}", new BlockChange(BlockType.Block,"${block.replaceBlock}"));\n`;
+        } else if (block.action === 'delete') {
+            fileContent += `        map.delete("${block.originBlock}");\n`;
+        }
+    });
+
+    fileContent += '        map.placeStagedBlocks();\n';
+    fileContent += '    }\n}\n';
+
+    fileContent += `
+class DiagBlockChange : BlockChange{
+    public DiagBlockChange(BlockType blockType, string model) : base(blockType,model){}
+    public DiagBlockChange(BlockType blockType, string model, Vec3 absolutePosition) : base(blockType,model,absolutePosition){}
+    public DiagBlockChange(BlockType blockType, string model, Vec3 absolutePosition, Vec3 pitchYawRoll) : base(blockType,model,absolutePosition,pitchYawRoll){}
+    public DiagBlockChange(Vec3 absolutePosition) : base(absolutePosition){}
+    public DiagBlockChange(Vec3 absolutePosition, Vec3 pitchYawRoll) : base(absolutePosition,pitchYawRoll){}
+    public override void changeBlock(CGameCtnBlock ctnBlock, Block @block){
+        switch (ctnBlock.Direction){
+            case Direction.North:
+                block.relativeOffset(new Vec3(0,0,0));
+                break;
+            case Direction.East:
+                block.relativeOffset(new Vec3(0,0,-32));
+                break;
+            case Direction.South:
+                block.relativeOffset(new Vec3(-64,0,-32));
+                break;
+            case Direction.West:
+                block.relativeOffset(new Vec3(-64,0,0));
+                break;
+        }
+        if (model != "") {
+            block.blockType = blockType;
+            block.model = model;
+        }
+        block.relativeOffset(absolutePosition);
+        block.pitchYawRoll += pitchYawRoll;
+    }
+}`;
+    return fileContent;
+}
