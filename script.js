@@ -173,6 +173,40 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
         fileContent += `    }\n}`;
+
+        fileContent += `
+class DiagBlockChange : BlockChange{\n
+    public DiagBlockChange(BlockType blockType, string model) : base(blockType,model){}\n
+    public DiagBlockChange(BlockType blockType, string model, Vec3 absolutePosition) : base(blockType,model,absolutePosition){}\n
+    public DiagBlockChange(BlockType blockType, string model, Vec3 absolutePosition, Vec3 pitchYawRoll) : base(blockType,model,absolutePosition,pitchYawRoll){}\n
+    public DiagBlockChange(Vec3 absolutePosition) : base(absolutePosition){}\n
+    public DiagBlockChange(Vec3 absolutePosition, Vec3 pitchYawRoll) : base(absolutePosition,pitchYawRoll){}\n
+\n
+    public override void changeBlock(CGameCtnBlock ctnBlock,Block @block){\n
+        switch (ctnBlock.Direction){\n
+            case Direction.North:\n
+                block.relativeOffset(new Vec3(0,0,0));\n
+                break;\n
+            case Direction.East:\n
+                block.relativeOffset(new Vec3(0,0,-32));\n
+                break;\n
+            case Direction.South:\n
+                block.relativeOffset(new Vec3(-64,0,-32));\n
+                break;\n
+            case Direction.West:\n
+                block.relativeOffset(new Vec3(-64,0,0));\n
+                break;\n
+        }\n
+        \n
+        if (model != "") {\n
+            block.blockType = blockType;\n
+            block.model = model;\n
+        }\n
+        block.relativeOffset(absolutePosition);\n
+        block.pitchYawRoll += pitchYawRoll;\n
+    }\n
+}\n
+        `
         return fileContent;
     }
 
