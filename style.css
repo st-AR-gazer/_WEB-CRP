@@ -33,8 +33,10 @@ canvas#dotCanvas {
     border-radius: 8px;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     width: 90%;
-    max-width: 650px;
+    max-width: 700px;
+    max-height: 90vh;
     margin: auto;
+    overflow-y: auto;
 }
 
 @media (max-width: 903px){
@@ -260,4 +262,51 @@ button:hover {
 .block-container {
     display: block;
     margin-bottom: 10px;
+}
+
+/* Dropzone */
+
+.dropzone {
+    background-color: #2c2c2c;
+    border: 2px dashed #444;
+    border-radius: 10px;
+    padding: 20px;
+    margin: 20px 0;
+    cursor: pointer;
+    text-align: center;
+    transition: border-color 0.3s;
+}
+
+.dropzone.dragover {
+    border-color: aqua;
+}
+
+.dropzone p {
+    margin: 10px 0 10px 0;
+}
+
+#metadata {
+    margin-top: 20px;
+}
+
+.preview-area {
+    margin: 0;
+    padding: 0;
+    border-radius: 5px;
+    border: 1px solid #000;
+    max-height: 200px;
+    overflow: auto;
+}
+
+textarea {
+    position: relative;
+    resize: none;
+    width: 99.8%;
+    height: 200px;
+    background-color: #2c2c2c;
+    color: #e0e0e0;
+    border: 1px solid #444;
+    border-radius: 5px;
+    margin: 0;
+    overflow: auto;
 }

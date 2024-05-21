@@ -9,7 +9,7 @@
     <link rel="icon" href="https://cdn.xjk.yt/glob/favicon.ico" type="image/x-icon">
 
     <meta property="og:title" content="Custom Replace Profiles" />
-    <meta property="og:description" content="This is a web companion tool to the replace profiles tool (Auto Alteration) made by Tobias2g" />
+    <meta property="og:description" content="This is a web companion tool to the companion plugin to the replace profiles tool (Auto Alteration) made by Tobias2g" />
     <meta property="og:url" content="https://www.crp.xjk.yt" />
     <meta property="og:image" content="https://www.crp.xjk.yt/content/img/og-img-preview.png" />
 </head>
@@ -19,43 +19,31 @@
 
     <div class="modal">
         <h1>Custom Replace Profiles</h1>
+        
+        <div id="metadata" style="display: flex; justify-content: space-evenly;">
+            <p><strong>Author:</strong> <span id="author"></span></p>
+            <p><strong>Creation Date:</strong> <span id="creationDate"></span></p>
+            <p><strong>Version:</strong> <span id="version"></span></p>
+        </div>
+        <div style="margin-top: 20px;">
+            <p><strong>Name:</strong> <input type="text" id="nameInput" style="width: 97%;"></p>
+        </div>
+        <p><strong>Description:</strong> <span id="description"></span></p>
 
-        <!-- <div class="flex-container settings-area">
-            <button id="placeholderId" onclick="placeholderFunction()">PLACEHOLDER</button>
-            <button id="placeholderId" onclick="placeholderFunction()">PLACEHOLDER</button>
-            <button id="placeholderId" onclick="placeholderFunction()">PLACEHOLDER</button>
-            <button id="placeholderId" onclick="placeholderFunction()">PLACEHOLDER</button>
-        </div> -->
-
-        <div style="padding-bottom: 6px;">
-            <input type="text" id="className" placeholder="Enter class-/file- name">
-            <!--<span id="classNameFeedback" style="color: red;"></span>-->
+        <div id="dropzone" class="dropzone">
+            <p>Drag and drop your JSON file here or click <a href="#" id="uploadButton" style="color: aqua;">here</a></p>
+            <input type="file" id="fileInput" accept=".json" style="display: none;">
         </div>
 
-        <div class="flex-container input-area">
-            <input type="text" id="blockInput" placeholder="Enter input block name" class="full-width-input">
-            <div id="outputBlockContainer">
-                <input type="text" id="blockOutput" placeholder="Enter output block name">
-            </div>
-            <div class="btn-group">
-                <input type="radio" id="blockModeReplace" name="action" value="replace" checked>
-                <label for="blockModeReplace" class="btn">Replace</label>
-                <input type="radio" id="blockModeDelete" name="action" value="delete">
-                <label for="blockModeDelete" class="btn">Delete</label>
-            </div>
-            <button onclick="addBlock();" style="margin-left: 10px;">Add Block</button>
+        <div style="display: flex; justify-content: space-between;">
+            <button id="downloadButton" onclick="downloadFile();" style="width: 48%;">💾 Download C#</button>
+            <button id="copyButton" onclick="copyToClipboard();" style="width: 48%;">📋 Copy C#</button>
         </div>
         
-
-        <div class="flex-container output-area">
-            <div id="filePreview" class="text-field" style="margin-right: 10px;">Your file will appear here...</div>
-            <button onclick="copyToClipboard();" style="margin-right: 8px;">📋</button>
-            <button onclick="downloadFile();">💾</button>
-        </div>
-
-        <div class="preview-area" style="display: block;"></div>
-    </div>
-    
+        <textarea class="preview-area" id="jsonArea" style="display: none; margin-top: 20px;"></textarea>
+        <textarea class="preview-area" id="previewArea" style="display: none; margin-top: 20px;"></textarea>
+        <button id="toggleButton" onclick="togglePreview();" style="margin-top: 20px;">Toggle C#</button>
+    </div>    
     
     <div id="notificationContainer" class="notification-container"></div>
 
@@ -63,69 +51,18 @@
     <script src="https://cdn.xjk.yt/glob/background-dots.js"></script>
 
     <script>
-        function clearFormatter() {
-            if (confirm("Are you sure you want to clear the Replace Profile?")) {
-                
-            }
-
-        }
-    </script>
-    <script>
-        function copyToClipboard() {
-            updatePreview();
-
-            const className = document.getElementById('className').value.trim() || 'CustomReplaceProfiles';
-            if (className === '') {
-                showNotification('Please enter a class-/file- name');
-                return;
-            }
-            const functionName = className.replace(/\s+/g, '_');
-            let fileContent = generateFileContent(className, functionName);
-
-            navigator.clipboard.writeText(fileContent).then(function() {
-                console.log('Copying to clipboard was successful!');
-                showNotification('Successfully copied to clipboard!');
-            }, function(err) {
-                console.error('Could not copy text: ', err);
-            });
-        }
-    </script>
-    <script>
-        function downloadFile() {
-            updatePreview();
-
-            const className = document.getElementById('className').value.trim() || 'CustomReplaceProfiles';
-            if (className === '') {
-                showNotification('Please enter a class-/file- name');
-                return;
-            }
-            const functionName = className.replace(/\s+/g, '_');
-            let fileContent = generateFileContent(className, functionName);
-
-            const blob = new Blob([fileContent], { type: 'text/plain;charset=utf-8' });
-            const url = URL.createObjectURL(blob);
-            const downloadLink = document.createElement('a');
-            downloadLink.href = url;
-            downloadLink.download = `${className}.cs`;
-            document.body.appendChild(downloadLink);
-            downloadLink.click();
-            document.body.removeChild(downloadLink);
-            URL.revokeObjectURL(url);
-        }
-    </script>
-    <script>
         function showNotification(message) {
             const notification = document.createElement('div');
             notification.classList.add('notification-message');
             notification.textContent = message;
-        
+
             const container = document.getElementById('notificationContainer');
             container.appendChild(notification);
-        
+
             setTimeout(() => {
                 notification.classList.add('show');
             }, 100);
-        
+
             setTimeout(() => {
                 notification.classList.remove('show');
                 setTimeout(() => {

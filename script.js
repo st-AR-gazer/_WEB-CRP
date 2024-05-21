@@ -1,157 +1,199 @@
 document.addEventListener('DOMContentLoaded', function() {
-    const replaceRadio = document.getElementById('blockModeReplace');
-    const deleteRadio = document.getElementById('blockModeDelete');
-    const outputBlockContainer = document.getElementById('outputBlockContainer');
+    const dropzone = document.getElementById('dropzone');
+    const fileInput = document.getElementById('fileInput');
+    const uploadButton = document.getElementById('uploadButton');
+    const authorSpan = document.getElementById('author');
+    const creationDateSpan = document.getElementById('creationDate');
+    const descriptionSpan = document.getElementById('description');
+    const versionSpan = document.getElementById('version');
+    const previewArea = document.getElementById('previewArea');
+    const jsonArea = document.getElementById('jsonArea');
+    const metadataContainer = document.getElementById('metadata');
+    const nameInput = document.getElementById('nameInput');
+    let jsonData;
+    let currentPreview = 'json';
 
-    replaceRadio.addEventListener('change', function() {
-        if (this.checked) {
-            outputBlockContainer.style.display = 'inline';
+    dropzone.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        dropzone.classList.add('dragover');
+    });
+
+    dropzone.addEventListener('dragleave', function() {
+        dropzone.classList.remove('dragover');
+    });
+
+    dropzone.addEventListener('drop', function(e) {
+        e.preventDefault();
+        dropzone.classList.remove('dragover');
+
+        const file = e.dataTransfer.files[0];
+        if (file && file.type === "application/json") {
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                jsonData = JSON.parse(event.target.result);
+                displayMetadata(jsonData);
+                displayJsonPreview(jsonData);
+            };
+            reader.readAsText(file);
+        } else {
+            alert("Please drop a valid JSON file.");
         }
     });
 
-    deleteRadio.addEventListener('change', function() {
-        if (this.checked) {
-            outputBlockContainer.style.display = 'none';
+    uploadButton.addEventListener('click', function(e) {
+        e.preventDefault();
+        fileInput.click();
+    });
+
+    fileInput.addEventListener('change', function() {
+        const file = fileInput.files[0];
+        if (file && file.type === "application/json") {
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                jsonData = JSON.parse(event.target.result);
+                displayMetadata(jsonData);
+                displayJsonPreview(jsonData);
+            };
+            reader.readAsText(file);
+        } else {
+            alert("Please select a valid JSON file.");
         }
     });
+
+    function displayMetadata(data) {
+        const key = Object.keys(data)[0];
+        const metadata = data[key].metadata;
+        authorSpan.textContent = metadata.author;
+        creationDateSpan.textContent = metadata.creationDate;
+        descriptionSpan.textContent = metadata.description;
+        versionSpan.textContent = metadata.version;
+        nameInput.value = key;
+        metadataContainer.style.display = 'flex';
+    }
+
+    function displayJsonPreview(data) {
+        jsonArea.style.display = 'block';
+        previewArea.style.display = 'none';
+        jsonArea.value = JSON.stringify(data, null, 2);
+    }
+
+    nameInput.addEventListener('input', function() {
+        if (jsonData) {
+            const oldKey = Object.keys(jsonData)[0];
+            const newKey = nameInput.value.trim();
+            if (newKey && oldKey !== newKey) {
+                jsonData[newKey] = jsonData[oldKey];
+                delete jsonData[oldKey];
+                displayJsonPreview(jsonData);
+            }
+        }
+    });
+
+
+    function displayCsPreview() {
+        if (!jsonData) {
+            showNotification('No JSON data available for preview.');
+            return;
+        }
+        
+        const key = Object.keys(jsonData)[0];
+        const mapData = jsonData[key].map;
+        const className = key;
+        const functionName = className.replace(/\s+/g, '_');
+
+        let fileContent = generateFileContent(className, functionName);
+        
+        previewArea.textContent = fileContent;
+        previewArea.style.display = 'block';
+        jsonArea.style.display = 'none';
+    }
+
+    window.copyToClipboard = function() {
+        saveChanges();
+        const key = Object.keys(jsonData)[0];
+        const mapData = jsonData[key].map;
+        const className = key;
+        const functionName = className.replace(/\s+/g, '_');
+
+        let fileContent = generateFileContent(className, functionName);
+        
+        navigator.clipboard.writeText(fileContent).then(function() {
+            console.log('Copying to clipboard was successful!');
+            showNotification('Successfully copied to clipboard!');
+        }, function(err) {
+            console.error('Could not copy text: ', err);
+            showNotification('Failed to copy to clipboard.');
+        });
+    }
+
+    window.downloadFile = function() {
+        saveChanges();
+        const key = Object.keys(jsonData)[0];
+        const mapData = jsonData[key].map;
+        const className = key;
+        const functionName = className.replace(/\s+/g, '_');
+
+        let fileContent = generateFileContent(className, functionName);
+
+        const blob = new Blob([fileContent], { type: 'text/plain;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const downloadLink = document.createElement('a');
+        downloadLink.href = url;
+        downloadLink.download = `${className}.cs`;
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        document.body.removeChild(downloadLink);
+        URL.revokeObjectURL(url);
+
+        showNotification("File successfully downloaded!");
+    }
+
+    function generateFileContent(className, functionName) {
+        const mapData = jsonData[Object.keys(jsonData)[0]].map;
+
+        let fileContent = `using GBX.NET;\nusing GBX.NET.Engines.Game;\nclass ${className} {\n    static float PI = (float)Math.PI;\n    public static void ${functionName}(Map map) {\n`;
+
+        mapData.forEach(block => {
+            if (block.method === 'replace') {
+                block.source.forEach(sourceBlock => {
+                    fileContent += `        map.replace("${sourceBlock}", new BlockChange(BlockType.Block,"${block.new}"));\n`;
+                });
+            } else if (block.method === 'delete') {
+                block.source.forEach(sourceBlock => {
+                    fileContent += `        map.delete("${sourceBlock}");\n`;
+                });
+            } else if (block.method === 'add') {
+                const { x, y, z, direction, block: newBlock, blockUnit } = block;
+                if (blockUnit) {
+                    fileContent += `        map.place("${newBlock}", new Int3(${x}, ${y}, ${z}), Direction.${direction}, BlockType.Block, BlockUnit.${blockUnit});\n`;
+                } else {
+                    fileContent += `        map.place("${newBlock}", new Int3(${x}, ${y}, ${z}), Direction.${direction}, BlockType.Block);\n`;
+                }
+            }
+        });
+
+        fileContent += `    }\n}`;
+        return fileContent;
+    }
+
+    window.togglePreview = function() {
+        if (currentPreview === 'json') {
+            displayCsPreview();
+            currentPreview = 'cs';
+            document.getElementById('toggleButton').textContent = 'Show JSON Preview';
+        } else {
+            displayJsonPreview(jsonData);
+            currentPreview = 'json';
+            document.getElementById('toggleButton').textContent = 'Show C# Preview';
+        }
+    }
+
+    window.saveChanges = function() {
+        try {
+            jsonData = JSON.parse(jsonArea.value);
+            //showNotification('Changes saved successfully.');
+        } catch (e) {
+            showNotification('Invalid JSON format. Please correct it.');
+        }
+    }
 });
-
-const blocks = [];
-
-function addBlock() {
-    const originBlock = document.getElementById('blockInput').value.trim();
-    const replaceBlock = document.getElementById('blockOutput').value.trim();
-    const action = document.querySelector('input[name="action"]:checked').value;
-
-    if (originBlock && (action === 'replace' && replaceBlock || action === 'delete')) {
-        const block = { originBlock, replaceBlock, action };
-        blocks.push(block);
-        document.getElementById('blockInput').value = '';
-        document.getElementById('blockOutput').value = '';
-        updatePreviewArea();
-    }
-}
-
-function updatePreviewArea() {
-    const previewArea = document.querySelector('.preview-area');
-    previewArea.innerHTML = '';
-
-    blocks.forEach((block, index) => {
-        const container = document.createElement('div');
-        container.className = 'flex-container';
-
-        const inputBlock = document.createElement('input');
-        inputBlock.type = 'text';
-        inputBlock.value = block.originBlock;
-        inputBlock.onchange = (e) => {
-            block.originBlock = e.target.value.trim();
-            updatePreview();
-        };
-
-        const outputBlock = document.createElement('input');
-        outputBlock.type = 'text';
-        outputBlock.value = block.replaceBlock;
-        outputBlock.onchange = (e) => {
-            block.replaceBlock = e.target.value.trim();
-            updatePreview();
-        };
-        outputBlock.style.display = block.action === 'delete' ? 'none' : '';
-
-        const btnGroup = document.createElement('div');
-        btnGroup.className = 'btn-group';
-        btnGroup.appendChild(createRadioButton(`replace${index}`, `action${index}`, 'replace', block.action === 'replace', 'Replace', outputBlock));
-        btnGroup.appendChild(createRadioButton(`delete${index}`, `action${index}`, 'delete', block.action === 'delete', 'Delete', outputBlock));
-
-        const deleteButton = document.createElement('button');
-        deleteButton.textContent = 'Delete Item';
-        deleteButton.style.marginLeft = '10px';
-        deleteButton.onclick = () => {
-            blocks.splice(index, 1);
-            updatePreviewArea();
-        };
-
-        container.appendChild(inputBlock);
-        container.appendChild(outputBlock);
-        container.appendChild(btnGroup);
-        container.appendChild(deleteButton);
-
-        previewArea.appendChild(container);
-    });
-}
-
-function updatePreview() {
-    const fileContent = generateFileContent();
-    const filePreview = document.getElementById('filePreview');
-    filePreview.textContent = fileContent;
-}
-
-function generateFileContent(className, functionName) {
-    let fileContent = `using GBX.NET;\nusing GBX.NET.Engines.Game;\nclass CustomReplaceProfiles{\n    static float PI = (float)Math.PI;\n    public static void ${functionName}(Map map){\n`;
-
-    blocks.forEach(block => {
-        if (block.action === 'replace') {
-            fileContent += `        map.replace("${block.originBlock}", new BlockChange(BlockType.Block,"${block.replaceBlock}"));\n`;
-        } else if (block.action === 'delete') {
-            fileContent += `        map.delete("${block.originBlock}");\n`;
-        }
-    });
-
-    fileContent += '        map.placeStagedBlocks();\n';
-    fileContent += '    }\n}\n';
-
-    fileContent += `
-class DiagBlockChange : BlockChange{
-    public DiagBlockChange(BlockType blockType, string model) : base(blockType,model){}
-    public DiagBlockChange(BlockType blockType, string model, Vec3 absolutePosition) : base(blockType,model,absolutePosition){}
-    public DiagBlockChange(BlockType blockType, string model, Vec3 absolutePosition, Vec3 pitchYawRoll) : base(blockType,model,absolutePosition,pitchYawRoll){}
-    public DiagBlockChange(Vec3 absolutePosition) : base(absolutePosition){}
-    public DiagBlockChange(Vec3 absolutePosition, Vec3 pitchYawRoll) : base(absolutePosition,pitchYawRoll){}
-    public override void changeBlock(CGameCtnBlock ctnBlock, Block @block){
-        switch (ctnBlock.Direction){
-            case Direction.North:
-                block.relativeOffset(new Vec3(0,0,0));
-                break;
-            case Direction.East:
-                block.relativeOffset(new Vec3(0,0,-32));
-                break;
-            case Direction.South:
-                block.relativeOffset(new Vec3(-64,0,-32));
-                break;
-            case Direction.West:
-                block.relativeOffset(new Vec3(-64,0,0));
-                break;
-        }
-        if (model != "") {
-            block.blockType = blockType;
-            block.model = model;
-        }
-        block.relativeOffset(absolutePosition);
-        block.pitchYawRoll += pitchYawRoll;
-    }
-}`;
-    return fileContent;
-}
-
-function createRadioButton(id, name, value, isChecked, labelContent, outputBlock) {
-    const radioInput = document.createElement('input');
-    radioInput.type = 'radio';
-    radioInput.id = id;
-    radioInput.name = name;
-    radioInput.value = value;
-    radioInput.checked = isChecked;
-    radioInput.onchange = () => {
-        blocks.find(b => `action${blocks.indexOf(b)}` === name).action = value;
-        outputBlock.style.display = value === 'delete' ? 'none' : '';
-        updatePreviewArea();
-    };
-
-    const label = document.createElement('label');
-    label.htmlFor = id;
-    label.className = 'btn';
-    label.textContent = labelContent;
-
-    const container = document.createElement('div');
-    container.appendChild(radioInput);
-    container.appendChild(label);
-    return container;
-}
