@@ -151,7 +151,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function generateFileContent(className, functionName) {
         const mapData = jsonData[Object.keys(jsonData)[0]].map;
 
-        let fileContent = `using GBX.NET;\nusing GBX.NET.Engines.Game;\nclass ${className} {\n    static float PI = (float)Math.PI;\n    public static void ${functionName}(Map map) {\n`;
+        let fileContent = `using GBX.NET;\nusing GBX.NET.Engines.Game;\nclass CRP {\n    static float PI = (float)Math.PI;\n    public static void ${functionName}(Map map) {\n`;
 
         mapData.forEach(block => {
             if (block.method === 'replace') {
